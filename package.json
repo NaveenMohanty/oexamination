@@ -1,0 +1,24 @@
+{
+  "name": "online_exminer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaveenMohanty/online-examiner.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NaveenMohanty/online-examiner/issues"
+  },
+  "homepage": "https://github.com/NaveenMohanty/online-examiner#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongoose": "^5.12.5",
+    "uuid": "^8.3.2"
+  }
+}
