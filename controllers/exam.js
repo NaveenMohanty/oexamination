@@ -1,34 +1,71 @@
 const Exam = require("../model/exam");
-exports.userExam = () => {
-  Exam.create(
-    {
-      examtitle: "Biology 2.45",
-      host: "608abfe595d213128fab3b81",
-      // questions: [
-      //   {
-      //     title: "What is your name",
-      //     options: [
-      //       { option: "Ram", isanswer: false },
-      //       { option: "Sham", isanswer: true },
-      //     ],
-      //     mark: 4,
-      //   },
-      //   {
-      //     title: "What is your Village name",
-      //     options: [
-      //       { option: "kuruda", isanswer: false },
-      //       { option: "patna", isanswer: true },
-      //     ],
-      //     mark: 4,
-      //   },
-      // ],
-      startingtime: "2021-04-29T14:17:09.879+00:00",
-      endingtime: "2021-04-29T14:20:09.879+00:00",
-      candidates: [{ id: "608abfe595d213128fab3b81" }],
-    },
-    function (err, data) {
-      if (err) console.log(err);
-      else console.log(data);
+
+exports.getExamById = (req, res, next, id) => {
+  Exam.findById(id, (exam, err) => {
+    if (err || !exam) {
+      res.status(404).send({
+        error: "Exam not found",
+      });
     }
-  );
+    req.exam = exam;
+  });
+  next();
+};
+exports.getExam = (req, res) => {
+  res.json(req.exam);
+};
+exports.createExam = (req, res) => {
+  Exam.create(req.body, function (err, exam) {
+    if (err) {
+      res.status(400).json({
+        error: "Exam not found",
+      });
+    }
+    res.json({
+      examid: exam._id,
+    });
+  });
+};
+
+exports.addQuestion = (req, res) => {
+  Exam.findById(req.exam._id, function (err, exam) {
+    if (err) {
+      res.status(404).json({
+        error: "Exam not found",
+      });
+    }
+    let questions = exam.questions;
+    questions.push(req.body.question);
+    exam.questions = questions;
+    exam.save((err, exam) => {
+      if (err) {
+        return res.status(404).json({
+          error: "Unable to update question",
+        });
+      }
+      res.json(exam);
+    });
+  });
+};
+
+exports.deleteQuestion = (req, res) => {
+  Exam.findById(req.exam._id, function (err, exam) {
+    if (err) {
+      return res.status(404).json({
+        error: "Exam not found",
+      });
+    }
+    let questions = exam.questions.filter(
+      (ques) => ques._id !== req.body.questionid
+    );
+    exam.questions = questions;
+    exam.save((err, exam) => {
+      if (err) {
+        return res.status(404).json({
+          error: "Unable to update question",
+        });
+      }
+      res.json(exam);
+    });
+  });
 };

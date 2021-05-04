@@ -2,7 +2,7 @@ const User = require("../model/user");
 exports.getUserById = (req, res, next, id) => {
   User.findById(id, function (err, user) {
     if (err || !user) {
-      return res.status(400).json({
+      return res.status(404).json({
         error: "No user was found in DB",
       });
     }
