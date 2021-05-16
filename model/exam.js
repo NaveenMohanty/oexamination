@@ -17,8 +17,14 @@ const ExamSchema = new mongoose.Schema(
         mark: Number,
       },
     ],
-    startingtime: String,
-    endingtime: String,
+    startingtime: {
+      type: String,
+      trim: true,
+    },
+    endingtime: {
+      type: String,
+      trim: true,
+    },
     candidates: [{ id: { type: ObjectId, ref: "User" } }],
   },
   { timestamps: true }

@@ -26,10 +26,7 @@ var userSchema = new mongoose.Schema(
       required: true,
     },
     salt: String,
-    role: {
-      type: Number,
-      default: 0,
-    },
+
     examhosted: [
       {
         examid: {

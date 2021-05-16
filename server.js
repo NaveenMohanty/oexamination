@@ -13,6 +13,8 @@ const io = require("socket.io")(server, {
 });
 // import of routes
 const authRoutes = require("./routes/auth");
+const examRoutes = require("./routes/exam");
+const userRoutes = require("./routes/user");
 // DB connection
 mongoose.connect(process.env.DB, {
   useCreateIndex: true,
@@ -31,6 +33,8 @@ app.get("/", (req, res) => {
   res.send("hello");
 });
 app.use("/api", authRoutes);
+app.use("/api", examRoutes);
+app.use("/api", userRoutes);
 
 // Port number
 const PORT = process.env.PORT || 5000;

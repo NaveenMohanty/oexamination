@@ -1,8 +1,10 @@
 const User = require("../model/user");
+
 exports.getUserById = (req, res, next, id) => {
   User.findById(id, function (err, user) {
     if (err || !user) {
       return res.status(404).json({
+        success: false,
         error: "No user was found in DB",
       });
     }
@@ -10,18 +12,29 @@ exports.getUserById = (req, res, next, id) => {
     next();
   });
 };
-exports.userCreate = () => {
-  User.create(
-    {
-      name: "Naveen Mohanty",
-      email: "nav3@nav.com",
-      password: "1212",
-      examhosted: [{ host: "608abfe595d213128fab3b81" }],
-    },
-    function (err, data) {
-      if (err) console.log(err);
-      else console.log(data);
-      // saved!
+
+exports.getUser = (req, res) => {
+  const { profile } = req;
+  profile.salt = undefined;
+  profile.encry_password = undefined;
+  res.json({ success: true, user: profile });
+};
+
+exports.updateUser = (req, res) => {
+  const { profile, body } = req;
+  let data = Object.keys(body);
+  data.map((v) => {
+    profile[v] = body[v];
+  });
+  profile.save((err, user) => {
+    if (err || !user) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Unable to update." });
     }
-  );
+    user.salt = undefined;
+    user.encry_password = undefined;
+    console.log();
+    res.json({ success: true, user });
+  });
 };
