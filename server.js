@@ -15,6 +15,8 @@ const io = require("socket.io")(server, {
 const authRoutes = require("./routes/auth");
 const examRoutes = require("./routes/exam");
 const userRoutes = require("./routes/user");
+const answerRoutes = require("./routes/answer");
+
 // DB connection
 mongoose.connect(process.env.DB, {
   useCreateIndex: true,
@@ -30,11 +32,12 @@ app.use(cors());
 
 // Routes
 app.get("/", (req, res) => {
-  res.send("hello");
+  res.send("Welcome to Oexamination Database");
 });
 app.use("/api", authRoutes);
 app.use("/api", examRoutes);
 app.use("/api", userRoutes);
+app.use("/api", answerRoutes);
 
 // Port number
 const PORT = process.env.PORT || 5000;

@@ -17,7 +17,7 @@ const answerSchema = new mongoose.Schema(
     answers: [
       {
         questionid: { type: ObjectId, ref: "Exam" },
-        answerid: { type: ObjectId, ref: "Exam" },
+        optionid: { type: ObjectId, ref: "Exam" },
         mark: Number,
       },
     ],

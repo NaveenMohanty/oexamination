@@ -35,6 +35,14 @@ var userSchema = new mongoose.Schema(
         },
       },
     ],
+    upcomingexams: [
+      {
+        examid: {
+          type: ObjectId,
+          ref: "Exam",
+        },
+      },
+    ],
     examattained: [
       {
         examid: {
