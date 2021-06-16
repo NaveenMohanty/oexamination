@@ -32,9 +32,11 @@ exports.updateUser = (req, res) => {
         .status(404)
         .json({ success: false, error: "Unable to update." });
     }
-    user.salt = undefined;
-    user.encry_password = undefined;
-    console.log();
-    res.json({ success: true, user });
+    const { name, email, userinfo } = user;
+    res.json({
+      success: true,
+      data: { name, email, userinfo },
+      message: "User updated successfully",
+    });
   });
 };

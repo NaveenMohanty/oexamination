@@ -5,7 +5,6 @@ var jwt = require("jsonwebtoken");
 var expressJwt = require("express-jwt");
 
 exports.signup = (req, res) => {
-  console.log("yes");
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -25,46 +24,58 @@ exports.signup = (req, res) => {
     }
     res.json({
       success: true,
-      user: { name: user.name, email: user.email, id: user._id },
+      message: `${user.name} created`,
     });
   });
 };
 
 exports.signin = (req, res) => {
-  const errors = validationResult(req);
-  const { email, password } = req.body;
+  try {
+    const errors = validationResult(req);
+    const { email, password } = req.body;
 
-  if (!errors.isEmpty()) {
-    return res.status(422).json({
+    if (!errors.isEmpty()) {
+      return res.status(422).json({
+        success: false,
+        error: errors.array()[0].msg,
+      });
+    }
+
+    User.findOne({ email }, (err, user) => {
+      if (err || !user) {
+        return res.status(400).json({
+          success: false,
+          error: "USER email does not exists",
+        });
+      }
+
+      if (!user.autheticate(password)) {
+        return res.status(401).json({
+          success: false,
+          error: "Email and password do not match",
+        });
+      }
+
+      //create token
+      const token = jwt.sign({ _id: user._id }, process.env.SECRET);
+      //put token in cookie
+      res.cookie("token", token, { expire: new Date() + 9999 });
+
+      //send response to front end
+      const { _id, name, email } = user;
+      return res.json({
+        data: { token, user: { _id, name, email } },
+        message: "Sign In Success",
+        success: true,
+      });
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
       success: false,
-      error: errors.array()[0].msg,
+      error: err,
     });
   }
-
-  User.findOne({ email }, (err, user) => {
-    if (err || !user) {
-      return res.status(400).json({
-        success: false,
-        error: "USER email does not exists",
-      });
-    }
-
-    if (!user.autheticate(password)) {
-      return res.status(401).json({
-        success: false,
-        error: "Email and password do not match",
-      });
-    }
-
-    //create token
-    const token = jwt.sign({ _id: user._id }, process.env.SECRET);
-    //put token in cookie
-    res.cookie("token", token, { expire: new Date() + 9999 });
-
-    //send response to front end
-    const { _id, name, email } = user;
-    return res.json({ token, user: { _id, name, email }, success: true });
-  });
 };
 exports.changepswd = (req, res) => {
   const errors = validationResult(req);
@@ -115,14 +126,21 @@ exports.isSignedIn = expressJwt({
 
 //custom middlewares
 exports.isAuthenticated = (req, res, next) => {
-  let checker = req.profile && req.auth && req.profile._id == req.auth._id;
-  if (!checker) {
-    return res.status(403).json({
+  try {
+    let checker = req.profile && req.auth && req.profile._id == req.auth._id;
+    if (!checker) {
+      return res.status(403).json({
+        success: false,
+        error: "ACCESS DENIED",
+      });
+    }
+    next();
+  } catch (error) {
+    return res.status(404).json({
       success: false,
-      error: "ACCESS DENIED",
+      error: error.message || error,
     });
   }
-  next();
 };
 
 // exports.isHost = (req, res, next) => {

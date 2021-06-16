@@ -29,6 +29,7 @@
     "express-validator": "^6.10.1",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.12.5",
+    "node-cron": "^3.0.0",
     "socket.io": "^4.0.1",
     "uuid": "^8.3.2"
   },

@@ -1,12 +1,12 @@
 const Exam = require("../model/exam");
 const User = require("../model/user");
+const Answer = require("../model/answer");
 const mongoose = require("mongoose");
+const examHelper = require("../helpers/examHelper");
 
 exports.getExamById = (req, res, next, id) => {
   Exam.findById(String(id), (err, exam) => {
     if (err || !exam) {
-      console.log(err);
-      console.log(exam);
       return res.status(404).send({
         success: false,
         error: "Exam not found!!!",
@@ -18,13 +18,30 @@ exports.getExamById = (req, res, next, id) => {
 };
 
 exports.getExam = (req, res) => {
+  const { exam, profile } = req;
   if (String(req.profile._id) == String(req.exam.host)) {
-    res.json({ success: true, exam: req.exam });
+    return res.json({ success: true, data: req.exam });
   } else if (
-    req.exam.candidates.find((id) => String(id) === String(req.profile._id))
+    req.exam.candidates.find(
+      (candidate) => String(candidate.id) === String(req.profile._id)
+    )
   ) {
-    exam.candidates = undefined;
-    res.json({ success: true, exam: req.exam });
+    let start = Date.parse(exam.startingtime);
+    let end = Date.parse(exam.endingtime);
+    let now = Date.parse(Date());
+    if (start > now) {
+      exam.questions = undefined;
+    } else if (now > start && now < end) {
+      exam.questions = exam.questions.map((ques) => {
+        ques.options = ques.options.map((option) => {
+          option.isanswer = undefined;
+          return option;
+        });
+        return ques;
+      });
+    }
+
+    res.json({ success: true, data: exam });
   } else {
     return res.status(401).json({
       success: false,
@@ -33,170 +50,174 @@ exports.getExam = (req, res) => {
   }
 };
 
-exports.createExam = (req, res) => {
-  const { body, profile } = req;
-  body.host = profile._id;
-  if (body.examtitle && body.startingtime && body.endingtime) {
-    Exam.create(body, function (err, exam) {
-      if (err) {
-        return res.status(400).json({
-          success: false,
-          error: "Exam not found",
-        });
-      }
-      profile.examhosted.push(exam._id);
-      profile.save((err, user) => {
-        if (err) {
-          Exam.findByIdAndRemove(exam._id, function (err, exam) {
-            if (err) {
-              return res.status(403).json({
-                success: false,
-                error: "Cannot create exam",
-              });
-            }
-          });
-          return res.status(403).json({
-            success: false,
-            error: "Cannot create exam",
-          });
-        }
+exports.createExam = async (req, res) => {
+  try {
+    const { body, profile } = req;
+    body.host = profile._id;
+    let start = Date.parse(body.startingtime);
+    let now = Date.parse(Date());
+    if (body.examtitle && body.startingtime && body.endingtime && start > now) {
+      let exam = await Exam.create(body);
+      profile.examhosted.push({ examid: exam._id });
+      await profile.save();
+      res.json({
+        success: true,
+        message: "Exam Created Successfully",
+        data: exam,
       });
-      res.json({ success: true, exam });
-    });
-  } else {
-    return res
-      .status(400)
-      .json({ success: false, error: "Cannot create exam" });
-  }
-};
-
-exports.editExam = (req, res) => {
-  const { body, profile, exam } = req;
-  let start = Date.parse(exam.startingtime);
-  let now = Date.parse(Date());
-  if (String(exam.host) === String(profile._id) && now < start) {
-    let data = Object.keys(body);
-    data.map((v) => {
-      if (v === "candidates") {
-        exam[v].map(async (candidateid) => {
-          await User.findById(String(candidateid.id), function (err, user) {
-            if (err) {
-              return res
-                .status(400)
-                .json({ success: false, error: "Candidate not found" });
-            }
-            if (
-              user.upcomingexams.find(
-                (v) => String(v.examid) === String(exam._id)
-              )
-            ) {
-              user.upcomingexams = user.upcomingexams.filter(
-                (v) => v.examid === exam._id
-              );
-              user.save((err, user) => {
-                if (err) {
-                  return res.status(400).json({
-                    success: false,
-                    error: "Cannot save to candidate",
-                  });
-                }
-              });
-            }
-          });
-        });
-        body[v].map((candidateid) => {
-          User.findById(String(candidateid.id), function (err, user) {
-            if (err) {
-              return res
-                .status(400)
-                .json({ success: false, error: "Candidate not found" });
-            }
-            user.upcomingexams.push({ examid: exam._id });
-            user.save((err, user) => {
-              if (err) {
-                return res.status(400).json({
-                  success: false,
-                  error: "Cannot save to candidate",
-                });
-              }
-            });
-          });
-        });
-      }
-      exam[v] = body[v];
-    });
-    exam.save((err, exam) => {
-      if (err) {
-        return res.status(403).json({
-          success: false,
-          error: "This exam is not hosted By you.",
-        });
-      }
-      res.json({ success: true, exam });
-    });
-  } else {
-    return res.status(404).json({
+    } else {
+      throw "Cannot create exam";
+    }
+  } catch (error) {
+    res.status(400).json({
       success: false,
-      error: "Unable to update question",
+      error: error.message || error,
     });
   }
 };
 
-exports.deleteExam = (req, res) => {
-  const { exam, profile } = req;
-  let start = Date.parse(exam.startingtime);
-  let now = Date.parse(Date());
-  if (String(exam.host) === String(profile._id) && now < start) {
-    Exam.findByIdAndRemove(exam._id, function (err, exam) {
-      if (err) {
-        return res.status(400).json({
-          success: false,
-          error: "Unable to delete!",
-        });
-      }
-      profile.examhosted = profile.examhosted.filter(
-        (v) => String(v._id) !== String(exam._id)
-      );
-      exam.candidates.map((candidateid) => {
-        User.findById(String(candidateid), function (err, user) {
-          if (!err || user) {
-            if (
-              !user.upcomingexams.find(
-                (v) => String(v.examid) === String(exam._id)
-              )
-            ) {
-              user.upcomingexams = user.upcomingexams.filter(
-                (v) => String(v.examid) !== String(exam._id)
-              );
-              user.save((err, user) => {
-                if (err) {
-                  return res.status(400).json({
-                    success: false,
-                    error: "cannot save to candidate",
-                  });
-                }
-              });
+exports.editExam = async (req, res) => {
+  try {
+    const { body, profile, exam } = req;
+    let start = Date.parse(exam.startingtime);
+    let now = Date.parse(Date());
+    if (String(exam.host) === String(profile._id) && now < start) {
+      let data = Object.keys(body);
+      let promises = data.map((v) => {
+        return new Promise(async (resolve, reject) => {
+          if (v === "candidates") {
+            let bodyCand = body[v].map((v) => String(v.id));
+            let examCand = exam[v].map((v) => String(v.id));
+            let add = bodyCand.filter((x) => !examCand.includes(x));
+            let dele = examCand.filter((x) => !bodyCand.includes(x));
+
+            let sucess = await examHelper.addExamIntoCandidates(add, exam._id);
+
+            if (!Boolean(sucess)) {
+              return reject("Unable to save");
+            }
+            sucess = await examHelper.deleExamIntoCandidates(dele, exam._id);
+
+            if (!Boolean(sucess)) {
+              return reject("Unable to save");
             }
           }
+          exam[v] = body[v];
+          resolve();
         });
       });
-      profile.save((err, user) => {
+      await Promise.all(promises);
+      await exam.save();
+      res.json({ success: true, message: "Exam updated successfully" });
+    } else {
+      throw "Unable to update question";
+    }
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      error: error.message || error,
+    });
+  }
+};
+
+exports.deleteExam = async (req, res) => {
+  try {
+    const { exam, profile } = req;
+    let start = Date.parse(exam.startingtime);
+    let end = Date.parse(exam.endingtime);
+    let now = Date.parse(Date());
+    if (
+      String(exam.host) === String(profile._id) &&
+      (now < start || now > end)
+    ) {
+      profile.examhosted = profile.examhosted.filter(
+        (v) => String(v.examid) !== String(exam._id)
+      );
+      let examCand = exam.candidates.map((v) => String(v.id));
+      let success = await examHelper.deleExamIntoCandidates(examCand, exam._id);
+      if (!Boolean(success)) {
+        throw "Unable to save";
+      }
+      await profile.save();
+      let answers = await Answer.find({ examid: exam._id });
+      await examHelper.deleAnsIntoCandidates(answers);
+      await Answer.deleteMany({ examid: exam._id });
+      await Exam.findByIdAndRemove(exam._id);
+      res.json({
+        success: true,
+        message: "Exam deleted",
+      });
+    } else {
+      throw "Unable to delete";
+    }
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      error: error.message || error,
+    });
+  }
+};
+
+exports.getUserUpcomingHostedExam = (req, res) => {
+  let examids = req.profile.examhosted;
+  let exams = examids.map((element) => {
+    return new Promise((resolve, reject) => {
+      Exam.findById(element.examid, (err, exam) => {
         if (err) {
-          return res.status(400).json({
-            success: false,
-            error: "Unable to delete",
-          });
+          return resolve({ status: false });
+        }
+        let end = Date.parse(exam.endingtime);
+        let now = Date.parse(Date());
+        if (end >= now) {
+          exam.questions = undefined;
+          exam.candidates = undefined;
+          return resolve({ status: true, exam });
+        } else {
+          return resolve({ status: false });
         }
       });
     });
-    res.json({
-      success: true,
-      message: "Exam deleted",
+  });
+  Promise.all(exams).then((result) => {
+    let arr = [];
+    for (let index = 0; index < result.length; index++) {
+      const element = result[index];
+      if (element.status) {
+        arr.push(element.exam);
+      }
+    }
+    res.json({ success: true, data: arr });
+  });
+};
+
+exports.getUserPastHostedExam = (req, res) => {
+  let examids = req.profile.examhosted;
+  let exams = examids.map((element) => {
+    return new Promise((resolve, reject) => {
+      Exam.findById(element.examid, (err, exam) => {
+        if (err) {
+          return resolve({ status: false });
+        }
+        let start = Date.parse(exam.endingtime);
+        let now = Date.parse(Date());
+        if (start < now) {
+          exam.questions = undefined;
+          exam.candidates = undefined;
+          return resolve({ status: true, exam });
+        } else {
+          return resolve({ status: false });
+        }
+      });
     });
-  } else {
-    return res.status(400).json({
-      success: false,
-      error: "Unable to delete",
-    });
-  }
+  });
+  Promise.all(exams).then((result) => {
+    let arr = [];
+    for (let index = 0; index < result.length; index++) {
+      const element = result[index];
+      if (element.status) {
+        arr.push(element.exam);
+      }
+    }
+    res.json({ success: true, data: arr });
+  });
 };

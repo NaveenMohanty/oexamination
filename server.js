@@ -5,6 +5,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
+const nodejob = require("./helpers/nodejob");
 const io = require("socket.io")(server, {
   cors: {
     origin: "*",
@@ -60,3 +61,7 @@ db.once("open", () => {
   console.log("DB CONNECTED");
   console.log("=========================================");
 });
+// Removes Examid of past exam from user upcomingexams list.
+setInterval(() => {
+  nodejob();
+}, 30000);

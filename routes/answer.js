@@ -7,6 +7,8 @@ const {
   getAnswerById,
   createAnswer,
   editAnswer,
+  getAnswerByhost,
+  getAnswerByCandidate,
 } = require("../controllers/answer");
 
 router.param("userId", getUserById);
@@ -20,10 +22,23 @@ router.get(
   createAnswer
 );
 
-router.post(
+router.put(
   "/answer/:userId/:examId/:answerId",
   isSignedIn,
   isAuthenticated,
   editAnswer
+);
+
+router.get(
+  "/host/answer/:userId",
+  isSignedIn,
+  isAuthenticated,
+  getAnswerByhost
+);
+router.get(
+  "/candidate/answer/:userId",
+  isSignedIn,
+  isAuthenticated,
+  getAnswerByCandidate
 );
 module.exports = router;
