@@ -9,6 +9,9 @@ const {
   editAnswer,
   getAnswerByhost,
   getAnswerByCandidate,
+  exitAnswer,
+  getAllAnswerOfExam,
+  getAnswerOfCandidate,
 } = require("../controllers/answer");
 
 router.param("userId", getUserById);
@@ -29,16 +32,25 @@ router.put(
   editAnswer
 );
 
-router.get(
-  "/host/answer/:userId",
+router.put(
+  "/answer/exit/:userId/:examId/:answerId",
   isSignedIn,
   isAuthenticated,
-  getAnswerByhost
+  exitAnswer
 );
+
 router.get(
-  "/candidate/answer/:userId",
+  "/host/answers/:userId/:examId",
   isSignedIn,
   isAuthenticated,
-  getAnswerByCandidate
+  getAllAnswerOfExam
 );
+
+router.post(
+  "/candidate/answer/:userId/:examId",
+  isSignedIn,
+  isAuthenticated,
+  getAnswerOfCandidate
+);
+
 module.exports = router;

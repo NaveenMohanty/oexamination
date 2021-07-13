@@ -28,7 +28,7 @@ router.post(
   "/signin",
   [
     check("email", "email is required").isEmail(),
-    check("password", "password field is required").isLength({ min: 3 }),
+    check("password", "password field is required").isLength({ min: 9 }),
   ],
   signin
 );
@@ -36,7 +36,7 @@ router.post(
 router.get("/signout", signout);
 router.put(
   "/changepassword/:userId",
-  [check("password", "password is required").isLength({ min: 3 })],
+  [check("password", "password is required").isLength({ min: 9 })],
   getUserById,
   isSignedIn,
   isAuthenticated,

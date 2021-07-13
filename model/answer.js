@@ -14,6 +14,10 @@ const answerSchema = new mongoose.Schema(
       ref: "User",
       required: "true",
     },
+    exited: {
+      type: String,
+      default: "",
+    },
     answers: [
       {
         questionid: { type: ObjectId, ref: "Exam" },

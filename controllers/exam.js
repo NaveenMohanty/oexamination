@@ -175,7 +175,7 @@ exports.getUserUpcomingHostedExam = (req, res) => {
         } else {
           return resolve({ status: false });
         }
-      });
+      }).populate("host", "_id name");
     });
   });
   Promise.all(exams).then((result) => {
@@ -207,7 +207,7 @@ exports.getUserPastHostedExam = (req, res) => {
         } else {
           return resolve({ status: false });
         }
-      });
+      }).populate("host", "_id name");
     });
   });
   Promise.all(exams).then((result) => {

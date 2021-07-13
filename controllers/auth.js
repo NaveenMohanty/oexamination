@@ -62,9 +62,9 @@ exports.signin = (req, res) => {
       res.cookie("token", token, { expire: new Date() + 9999 });
 
       //send response to front end
-      const { _id, name, email } = user;
+      const { _id, name, email, userinfo } = user;
       return res.json({
-        data: { token, user: { _id, name, email } },
+        data: { token, user: { _id, name, email, userinfo } },
         message: "Sign In Success",
         success: true,
       });
@@ -86,6 +86,7 @@ exports.changepswd = (req, res) => {
       error: errors.array()[0].msg,
     });
   }
+
   User.findById(req.profile._id, function (err, user) {
     if (err || !user) {
       return res.status(400).json({
