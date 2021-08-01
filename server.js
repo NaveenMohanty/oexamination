@@ -12,11 +12,13 @@ const io = require("socket.io")(server, {
     methods: ["GET", "POST"],
   },
 });
+
 // import of routes
 const authRoutes = require("./routes/auth");
 const examRoutes = require("./routes/exam");
 const userRoutes = require("./routes/user");
 const answerRoutes = require("./routes/answer");
+const SocketHelper = require("./helpers/socket");
 
 // DB connection
 mongoose.connect(process.env.DB, {
@@ -44,10 +46,14 @@ app.use("/api", answerRoutes);
 const PORT = process.env.PORT || 5000;
 
 // Server running check
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("=========================================");
   console.log(`Server listening at http://localhost:${PORT}`);
 });
+// app.listen(PORT, () => {
+//   console.log("=========================================");
+//   console.log(`Server listening at http://localhost:${PORT}`);
+// });
 
 // DB connection check
 const db = mongoose.connection;
@@ -61,7 +67,11 @@ db.once("open", () => {
   console.log("DB CONNECTED");
   console.log("=========================================");
 });
+
 // Removes Examid of past exam from user upcomingexams list.
 setInterval(() => {
   nodejob();
 }, 30000);
+
+// Socket implementation
+SocketHelper(io);
